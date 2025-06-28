@@ -2,15 +2,16 @@ package com.chirag.jobms.external;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class Company {
+public class Review {
     private Long id;
 
-    private String name;
+    private String title;
 
     private String description;
 
-    List<Review> reviewList;
+    private Double rating;
+
+
+    private Long companyId;
 }

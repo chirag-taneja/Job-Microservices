@@ -3,6 +3,7 @@ package com.chirag.company_ms.controller;
 
 import com.chirag.company_ms.entity.Company;
 import com.chirag.company_ms.external.Review;
+import com.chirag.company_ms.external.ReviewService;
 import com.chirag.company_ms.repo.ComapnyRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -21,14 +22,14 @@ public class ComapnyController {
     RestTemplate restTemplate;
 
     ComapnyRepo comapnyRepo;
+    ReviewService reviewService;
 
     @Autowired
-    public ComapnyController(RestTemplate restTemplate, ComapnyRepo comapnyRepo) {
+    public ComapnyController(RestTemplate restTemplate, ComapnyRepo comapnyRepo,ReviewService reviewService) {
         this.restTemplate = restTemplate;
         this.comapnyRepo = comapnyRepo;
+        this.reviewService=reviewService;
     }
-
-
 
     @GetMapping()
     public ResponseEntity<List<Company>> findAll()
@@ -46,6 +47,7 @@ public class ComapnyController {
     public ResponseEntity<Company> findById(@PathVariable Long id)
     {
         Company company = comapnyRepo.findById(id).orElseThrow(() -> new RuntimeException("Company NOt Found"));
+        company.setReviews(reviewService.getReviewList(company.getId()));
         return ResponseEntity.ok(company);
     }
 

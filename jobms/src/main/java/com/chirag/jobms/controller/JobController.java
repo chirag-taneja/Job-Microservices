@@ -3,6 +3,7 @@ package com.chirag.jobms.controller;
 
 import com.chirag.jobms.entity.Job;
 import com.chirag.jobms.external.Company;
+import com.chirag.jobms.external.CompanyService;
 import com.chirag.jobms.repo.JobRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,12 +22,14 @@ public class JobController {
       JobRepo jobRepo;
 
       RestTemplate restTemplate;
+      CompanyService companyService;
 
 
     @Autowired
-    public JobController(JobRepo jobRepo,RestTemplate restTemplate) {
+    public JobController(JobRepo jobRepo,RestTemplate restTemplate,CompanyService companyService) {
         this.jobRepo = jobRepo;
         this.restTemplate=restTemplate;
+        this.companyService=companyService;
     }
 
     @GetMapping()
@@ -56,6 +59,7 @@ public class JobController {
     @GetMapping("/{id}")
     public  ResponseEntity<Job> getJobById(@PathVariable Long id) throws InstanceNotFoundException {
         Job job = jobRepo.findById(id).orElseThrow(() -> new RuntimeException("JOb not found"));
+        job.setCompany(companyService.getCompany(job.getCompanyId()));
         return ResponseEntity.ok(job);
     }
 
