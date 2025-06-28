@@ -20,20 +20,23 @@ public class JobController {
 
       JobRepo jobRepo;
 
+      RestTemplate restTemplate;
+
 
     @Autowired
-    public JobController(JobRepo jobRepo) {
+    public JobController(JobRepo jobRepo,RestTemplate restTemplate) {
         this.jobRepo = jobRepo;
+        this.restTemplate=restTemplate;
     }
 
     @GetMapping()
     public ResponseEntity<List<Job>> findAllJob()
     {
         List<Job> all = jobRepo.findAll();
-        RestTemplate restTemplate=new RestTemplate();
+
         try {
             all.stream().forEach(i -> {
-                i.setCompany(restTemplate.getForObject("http://localhost:8082/company/" + i.getCompanyId(), Company.class));
+                i.setCompany(restTemplate.getForObject("http://COMPANY-MS/company/" + i.getCompanyId(), Company.class));
             });
         }catch (Exception e)
         {
