@@ -1,5 +1,6 @@
 package com.chirag.company_ms.entity;
 
+import com.chirag.company_ms.external.Review;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,13 +24,15 @@ public class Company {
 
     private String description;
 
+
 //    @JsonManagedReference
 //    @OneToMany(mappedBy = "company")
 //    private List<Job> jobList;
 //
 //    @OneToMany(mappedBy = "company")
 //    @JsonManagedReference
-//    private List<Review> reviews;
+    @Transient
+    private List<Review> reviews;
 
 
 
