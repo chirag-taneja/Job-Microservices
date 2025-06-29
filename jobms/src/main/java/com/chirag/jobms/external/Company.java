@@ -12,5 +12,5 @@ public class Company {
 
     private String description;
 
-    List<Review> reviewList;
+    List<Review> reviews;
 }

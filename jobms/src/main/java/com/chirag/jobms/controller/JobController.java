@@ -59,6 +59,7 @@ public class JobController {
     @GetMapping("/{id}")
     public  ResponseEntity<Job> getJobById(@PathVariable Long id) throws InstanceNotFoundException {
         Job job = jobRepo.findById(id).orElseThrow(() -> new RuntimeException("JOb not found"));
+
         job.setCompany(companyService.getCompany(job.getCompanyId()));
         return ResponseEntity.ok(job);
     }
