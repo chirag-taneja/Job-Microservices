@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="service-reg" />
+        <module name="config-server" />
       </profile>
       <profile name="Annotation profile for review-ms" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -28,6 +29,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="company-ms" options="-parameters" />
+      <module name="config-server" options="-parameters" />
       <module name="job" options="-parameters" />
       <module name="jobms" options="-parameters" />
       <module name="review-ms" options="-parameters" />

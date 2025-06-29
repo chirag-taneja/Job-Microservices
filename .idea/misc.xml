@@ -9,6 +9,7 @@
         <option value="$PROJECT_DIR$/review-ms/pom.xml" />
         <option value="$PROJECT_DIR$/company-ms/pom.xml" />
         <option value="$PROJECT_DIR$/service-reg/pom.xml" />
+        <option value="$PROJECT_DIR$/config-server/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
