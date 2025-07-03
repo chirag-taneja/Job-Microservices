@@ -5,6 +5,7 @@ import com.chirag.company_ms.entity.Company;
 import com.chirag.company_ms.external.Review;
 import com.chirag.company_ms.external.ReviewService;
 import com.chirag.company_ms.repo.ComapnyRepo;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,7 @@ public class ComapnyController {
     ComapnyRepo comapnyRepo;
     ReviewService reviewService;
 
+    int attempt=0;
     @Autowired
     public ComapnyController(RestTemplate restTemplate, ComapnyRepo comapnyRepo,ReviewService reviewService) {
         this.restTemplate = restTemplate;
@@ -43,12 +45,19 @@ public class ComapnyController {
         return  ResponseEntity.ok(all);
     }
 
+    @Retry(name = "reviewBreaker",fallbackMethod = "fallbackOfGetCompanyById")
     @GetMapping("/{id}")
     public ResponseEntity<Company> findById(@PathVariable Long id)
     {
+
+        System.out.println("attempt"+ ++attempt);
         Company company = comapnyRepo.findById(id).orElseThrow(() -> new RuntimeException("Company NOt Found"));
         company.setReviews(reviewService.getReviewList(company.getId()));
         return ResponseEntity.ok(company);
+    }
+
+    public ResponseEntity<Company> fallbackOfGetCompanyById(Exception e){
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping()

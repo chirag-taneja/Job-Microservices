@@ -5,6 +5,7 @@ import com.chirag.jobms.entity.Job;
 import com.chirag.jobms.external.Company;
 import com.chirag.jobms.external.CompanyService;
 import com.chirag.jobms.repo.JobRepo;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.management.InstanceNotFoundException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/job")
@@ -57,16 +60,24 @@ public class JobController {
     }
 
     @GetMapping("/{id}")
+    @CircuitBreaker(name = "companyBreaker",fallbackMethod = "fallbackOfGetJobId")
     public  ResponseEntity<Job> getJobById(@PathVariable Long id) throws InstanceNotFoundException {
         Job job = jobRepo.findById(id).orElseThrow(() -> new RuntimeException("JOb not found"));
 
-        job.setCompany(companyService.getCompany(job.getCompanyId()));
+            job.setCompany(companyService.getCompany(job.getCompanyId()));
+
         return ResponseEntity.ok(job);
     }
+
+    public  ResponseEntity<Job> fallbackOfGetJobId(Exception e) throws InstanceNotFoundException {
+        return ResponseEntity.notFound().build();
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteJobById(@PathVariable Long id) throws InstanceNotFoundException {
         Job job = jobRepo.findById(id).orElseThrow(() -> new RuntimeException("JOb not found"));
+
         jobRepo.delete(job);
         return ResponseEntity.ok("deleted successfully");
     }
