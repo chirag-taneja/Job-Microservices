@@ -25,6 +25,8 @@ public class Company {
     private String description;
 
 
+    private Double rating;
+
 //    @JsonManagedReference
 //    @OneToMany(mappedBy = "company")
 //    private List<Job> jobList;

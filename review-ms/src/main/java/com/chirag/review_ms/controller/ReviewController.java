@@ -2,6 +2,7 @@ package com.chirag.review_ms.controller;
 
 
 import com.chirag.review_ms.entity.Review;
+import com.chirag.review_ms.messaging.ReviewMessageProducer;
 import com.chirag.review_ms.repo.ReviewRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,11 +20,13 @@ public class ReviewController {
 
 
     ReviewRepo reviewRepo;
+    ReviewMessageProducer reviewMessageProducer;
 
     @Autowired
-    public ReviewController( ReviewRepo reviewRepo) {
+    public ReviewController( ReviewRepo reviewRepo,ReviewMessageProducer reviewMessageProducer) {
 
         this.reviewRepo = reviewRepo;
+        this.reviewMessageProducer=reviewMessageProducer;
     }
 
     @GetMapping()
@@ -36,7 +39,8 @@ public class ReviewController {
     public ResponseEntity<String> saveNewJob(@RequestBody Review review, @RequestParam Long companyId){
 //        Company company = comapnyRepo.findById(companyId).orElseThrow(() -> new RuntimeException("Company NOt Found"));
 //        review.setCompany(company);
-        reviewRepo.save(review);
+        Review save = reviewRepo.save(review);
+        reviewMessageProducer.sendMessage(save);
         return new ResponseEntity<>("Review added successfully", HttpStatus.CREATED);
     }
 

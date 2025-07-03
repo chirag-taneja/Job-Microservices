@@ -5,3 +5,10 @@ services:
     container_name: zipkin
     ports:
       - 9411:9411
+
+  rabit:
+    image: rabbitmq:4-management
+    container_name: rabit
+    ports:
+      - 5672:5672
+      - 15672:15672
