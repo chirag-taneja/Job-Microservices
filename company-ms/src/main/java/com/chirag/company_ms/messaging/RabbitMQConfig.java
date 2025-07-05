@@ -15,7 +15,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue companyRating(){
-        return new Queue("companyRating");
+        return new Queue("companyRatingQueue");
     }
 
     @Bean

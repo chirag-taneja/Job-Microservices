@@ -6,9 +6,11 @@ import com.chirag.company_ms.external.Review;
 import com.chirag.company_ms.external.ReviewService;
 import com.chirag.company_ms.repo.ComapnyRepo;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -16,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/company")
 public class ComapnyController {
@@ -56,9 +59,13 @@ public class ComapnyController {
         return ResponseEntity.ok(company);
     }
 
-    public ResponseEntity<Company> fallbackOfGetCompanyById(Exception e){
-        return ResponseEntity.notFound().build();
-    }
+
+        public ResponseEntity<Company> fallbackOfGetCompanyById(Exception e){
+            log.error("Fallback triggered for getCompanyById: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new Company()); // Return empty company or cached version
+        }
+
 
     @PostMapping()
     public ResponseEntity<Company> saveCompany(@RequestBody Company company)

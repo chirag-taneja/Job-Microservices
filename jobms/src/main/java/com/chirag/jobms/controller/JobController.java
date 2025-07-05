@@ -6,6 +6,7 @@ import com.chirag.jobms.external.Company;
 import com.chirag.jobms.external.CompanyService;
 import com.chirag.jobms.repo.JobRepo;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @RestController
 @RequestMapping("/job")
 
@@ -70,7 +72,9 @@ public class JobController {
     }
 
     public  ResponseEntity<Job> fallbackOfGetJobId(Exception e) throws InstanceNotFoundException {
-        return ResponseEntity.notFound().build();
+        log.error("Fallback triggered for getJobById: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new Job()); // Return empty job or cached version
     }
 
 

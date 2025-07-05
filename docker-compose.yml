@@ -1,14 +1,181 @@
+version: '3.8'
 
 services:
+  # Infrastructure Services
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: job-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: job
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data  # macOS-friendly path
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-net
+
+  # No need for separate volumes: section when using host paths
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - microservices-net
+
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
     ports:
-      - 9411:9411
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=mem
+    networks:
+      - microservices-net
 
-  rabit:
-    image: rabbitmq:4-management
-    container_name: rabit
+
+
+  service-registry:
+    image: service-reg:latest
+    container_name: service-registry
     ports:
-      - 5672:5672
-      - 15672:15672
+      - "8761:8761"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - microservices-net
+
+
+  config-server:
+    image: config-server:latest
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka  # Corrected ENV name
+    depends_on:
+      service-registry:
+        condition: service_healthy  # Wait for Eureka to be ready
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - microservices-net
+
+
+  # Application Services
+
+
+  company-service:
+    image: company-ms
+    container_name: company-service
+    ports:
+      - "8082:8082"
+    environment:
+    - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka
+    - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/job
+    - SPRING_DATASOURCE_USERNAME=postgres
+    - SPRING_DATASOURCE_PASSWORD=admin
+    - SPRING_RABBITMQ_HOST=rabbitmq
+    - SPRING_RABBITMQ_USERNAME=guest
+    - SPRING_RABBITMQ_PASSWORD=guest
+    - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    - MANAGEMENT_TRACING_ENABLED=true
+    - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+    - SPRING_SLEUTH_SAMPLER_PROBABILITY=1.0
+    - SPRING_SLEUTH_WEB_ENABLED=true
+    - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+    depends_on:
+      zipkin:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  job-service:
+    image: job-ms
+    container_name: job-service
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/job
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    depends_on:
+      - service-registry
+      - postgres
+      - company-service
+    networks:
+      - microservices-net
+
+  review-service:
+    image: review-ms
+    container_name: review-service
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/job
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    depends_on:
+      - service-registry
+      - postgres
+      - rabbitmq
+    networks:
+      - microservices-net
+
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - microservices-net
+
+volumes:
+  postgres_data:
+
+networks:
+  microservices-net:
+    driver: bridge
